@@ -1,0 +1,41 @@
+# CV Classifier Configuration
+# ============================================================
+
+# Keywords that MUST be present — scored at 70% weight
+must_keywords:
+  - "network, networking"   # OR — any one satisfies this requirement
+  - kubernetes
+  - "scripting, scripts"
+  - terraform
+  - "tofu, opentofu"          # OR
+
+# Nice-to-have keywords — scored at 30% weight
+nice_keywords:
+  - Docker
+  - Kubernetes
+  - Azure
+  - "ArgoCD, Flux"
+
+# Weight assigned to each category (must sum to 1.0)
+must_weight: 0.7
+nice_weight: 0.3
+
+# A CV is "PASS" when its combined score >= this threshold (0.0–1.0)
+pass_threshold: 0.6
+
+# ── LLM settings ──────────────────────────────────────────
+llm:
+  # GitHub Models endpoint (uses your GITHUB_TOKEN)
+  endpoint: "https://models.inference.ai.azure.com"
+  # Available GitHub models: gpt-4o, gpt-4o-mini, Phi-3-medium-128k-instruct, etc.
+  model: "gpt-4o-mini"
+
+# ── Output settings ────────────────────────────────────────
+output:
+  csv_file: "results.csv"          # relative to the CV folder
+  pass_folder: "classified/pass"   # relative to the CV folder
+  fail_folder: "classified/fail"   # relative to the CV folder
+  copy_files: true                 # true = copy; false = move the original files
+  top_n: 3                         # how many top-scored CVs to show in the summary
+  bottom_n: 3                      # how many lowest-scored CVs to show in the summary
+workers: 5                       # number of parallel workers (override with --workers N); GitHub Models caps at 5 concurrent requests
