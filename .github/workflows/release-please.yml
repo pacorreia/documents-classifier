@@ -67,6 +67,9 @@ jobs:
     if: ${{ needs.release-please.outputs.release_created }}
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
@@ -82,10 +85,12 @@ jobs:
       - name: Package artifacts
         run: |
           chmod +x dist/linux/documents-classifier
+          cp config.yaml dist/linux/config.yaml
+          cp config.yaml dist/windows/config.yaml
           tar -czf documents-classifier-${{ needs.release-please.outputs.tag_name }}-linux-amd64.tar.gz \
-            -C dist/linux documents-classifier
+            -C dist/linux documents-classifier config.yaml
           zip -j documents-classifier-${{ needs.release-please.outputs.tag_name }}-windows-amd64.zip \
-            dist/windows/documents-classifier.exe
+            dist/windows/documents-classifier.exe dist/windows/config.yaml
 
       - name: Upload binaries to release
         uses: softprops/action-gh-release@v2
