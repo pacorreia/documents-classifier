@@ -1,14 +1,14 @@
 #!/usr/bin/env pwsh
-# Build cv-classifier as a standalone Windows binary using PyInstaller.
+# Build documents-classifier as a standalone Windows binary using PyInstaller.
 #
 # Requirements:
 #   - Python 3.10+ installed on Windows (https://python.org/downloads)
-#   - Run from the cv-classifier directory in PowerShell:
+#   - Run from the documents-classifier directory in PowerShell:
 #
-#       cd C:\path\to\cv-classifier
+#       cd C:\path\to\documents-classifier
 #       .\build-windows.ps1
 #
-# Output: .\dist\cv-classifier.exe
+# Output: .\dist\documents-classifier.exe
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -51,27 +51,10 @@ Write-Host "── Installing dependencies ────────────�
 
 # ── Build ──────────────────────────────────────────────────────────────────────
 Write-Host "── Building Windows binary ────────────────────────────────────────────"
-& $PyExe -m PyInstaller `
-    --onefile `
-    --name cv-classifier `
-    --hidden-import=pdfminer `
-    --hidden-import=pdfminer.high_level `
-    --hidden-import=pdfminer.layout `
-    --hidden-import=pdfminer.pdfpage `
-    --hidden-import=pdfminer.pdfinterp `
-    --hidden-import=pdfminer.converter `
-    --hidden-import=docx `
-    --hidden-import=docx.oxml `
-    --hidden-import=docx.oxml.ns `
-    --hidden-import=docx.parts `
-    --hidden-import=docx.parts.document `
-    --hidden-import=yaml `
-    --clean `
-    --noconfirm `
-    classifier.py
+& $PyExe -m PyInstaller --clean --noconfirm documents-classifier.spec
 
 Write-Host ""
-Write-Host "Binary built: $ScriptDir\dist\cv-classifier.exe"
+Write-Host "Binary built: $ScriptDir\dist\documents-classifier.exe"
 Write-Host ""
 Write-Host "Copy it alongside config.yaml and run:"
-Write-Host '  $env:GITHUB_TOKEN="ghp_..."; .\cv-classifier.exe C:\path\to\cvs\'
+Write-Host '  $env:GITHUB_TOKEN="ghp_..."; .\documents-classifier.exe C:\path\to\cvs\'
