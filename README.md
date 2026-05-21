@@ -1,1 +1,1 @@
-# cv-classifier
+# documents-classifier
