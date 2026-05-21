@@ -1,4 +1,4 @@
-"""CV score calculation from classification results."""
+"""Document score calculation from classification results."""
 
 
 def calculate_score(
@@ -7,7 +7,7 @@ def calculate_score(
     nice_groups: list[list[str]],
     must_weight: float = 0.7,
     nice_weight: float = 0.3,
-) -> float:
+) -> tuple[float, float, float]:
     """
     Score = must_weight × (satisfied must groups / total must groups)
           + nice_weight × (satisfied nice groups / total nice groups).
@@ -29,9 +29,10 @@ def calculate_score(
     )
 
     if must_ratio is None and nice_ratio is None:
-        return 0.0
+        return 0.0, 0.0, 0.0
     if must_ratio is None:
-        return round(nice_ratio, 3)
+        return round(nice_ratio, 3), 0.0, round(nice_ratio, 3)
     if nice_ratio is None:
-        return round(must_ratio, 3)
-    return round(must_ratio * must_weight + nice_ratio * nice_weight, 3)
+        return round(must_ratio, 3), round(must_ratio, 3), 0.0
+    total = round(must_ratio * must_weight + nice_ratio * nice_weight, 3)
+    return total, round(must_ratio, 3), round(nice_ratio, 3)

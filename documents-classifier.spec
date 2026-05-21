@@ -4,9 +4,28 @@
 a = Analysis(
     ['classifier.py'],
     pathex=[],
-    binaries=[],
-    datas=[],
-    hiddenimports=['pdfminer', 'pdfminer.high_level', 'pdfminer.layout', 'pdfminer.pdfpage', 'pdfminer.pdfinterp', 'pdfminer.converter', 'docx', 'docx.oxml', 'docx.oxml.ns', 'docx.parts', 'docx.parts.document', 'yaml'],
+    binaries=[
+        # OCR: bundle tesseract and poppler's pdf2image utilities so the binary
+        # is fully self-contained.  PyInstaller will auto-collect their
+        # shared-library dependencies.
+        # pdf2image calls pdfinfo (page count) then pdftoppm (rasterise).
+        ('/usr/bin/tesseract', '.'),
+        ('/usr/bin/pdftoppm', '.'),
+        ('/usr/bin/pdfinfo', '.'),
+    ],
+    datas=[
+        # English Tesseract language model (required at runtime).
+        ('/usr/share/tesseract-ocr/5/tessdata/eng.traineddata', 'tessdata'),
+    ],
+    hiddenimports=[
+        'pdfminer', 'pdfminer.high_level', 'pdfminer.layout', 'pdfminer.pdfpage',
+        'pdfminer.pdfinterp', 'pdfminer.converter',
+        'docx', 'docx.oxml', 'docx.oxml.ns', 'docx.parts', 'docx.parts.document',
+        'yaml',
+        'pytesseract', 'pytesseract.pytesseract',
+        'pdf2image', 'pdf2image.pdf2image',
+        'PIL', 'PIL.Image', 'PIL.ImageOps',
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

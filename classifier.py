@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-CV Classifier — LLM-powered keyword presence scoring.
+Document Classifier — LLM-powered keyword presence scoring.
 
 Uses the GitHub Models API (Azure AI Inference) via the openai SDK.
 Requires:  GITHUB_TOKEN environment variable with access to GitHub Models.
 
 Usage:
-    python classifier.py /path/to/cv/folder [--config config.yaml] [--no-llm]
+    python classifier.py /path/to/documents/folder [--config config.yaml] [--no-llm]
 """
 
 import os
@@ -21,7 +21,7 @@ import yaml
 from openai import OpenAI
 
 from extractor import extract_text
-from classifiers import classify_cv, classify_cv_keyword
+from classifiers import classify_doc, classify_doc_keyword
 from scoring import calculate_score
 from config import load_config, validate_config
 from report import write_csv, print_leaderboard
@@ -54,7 +54,7 @@ def _parse_keyword_groups(entries: list[str]) -> list[list[str]]:
 
 
 def _process_one(
-    cv_path: Path,
+    doc_path: Path,
     client,
     model: str | None,
     no_llm: bool,
@@ -67,18 +67,15 @@ def _process_one(
     pass_threshold: float,
     must_known: set[str],
     nice_known: set[str],
-    pass_dir: Path,
-    fail_dir: Path,
-    copy_mode: bool,
 ) -> tuple[dict, str]:
-    """Process a single CV file. Thread-safe. Returns (row_dict, display_line)."""
-    prefix = f"  ► {cv_path.name}"
+    """Process a single document. Thread-safe. Returns (row_dict, display_line)."""
+    prefix = f"  ► {doc_path.name}"
     try:
-        text = extract_text(cv_path)
+        text = extract_text(doc_path)
         if not text.strip():
             return (
                 {
-                    "filename": cv_path.name,
+                    "filename": doc_path.name,
                     "result": "SKIP",
                     "score": "0.000",
                     "matched_must": "",
@@ -90,9 +87,9 @@ def _process_one(
             )
 
         result = (
-            classify_cv_keyword(text, must_keywords_flat, nice_keywords_flat)
+            classify_doc_keyword(text, must_keywords_flat, nice_keywords_flat)
             if no_llm
-            else classify_cv(client, model, text, must_keywords_flat, nice_keywords_flat)
+            else classify_doc(client, model, text, must_keywords_flat, nice_keywords_flat)
         )
 
         matched_must_raw = result.get("matched_must", [])
@@ -112,7 +109,7 @@ def _process_one(
         result["matched_must"] = matched_must
         result["matched_nice"] = matched_nice
 
-        score = calculate_score(result, must_groups, nice_groups, must_weight, nice_weight)
+        score, must_score, nice_score = calculate_score(result, must_groups, nice_groups, must_weight, nice_weight)
         passed = score >= pass_threshold
         matched_must_set = set(matched_must)
         missing_must_labels = [
@@ -120,31 +117,29 @@ def _process_one(
             if not any(alt in matched_must_set for alt in group)
         ]
 
-        dest = pass_dir if passed else fail_dir
-        if copy_mode:
-            shutil.copy2(cv_path, dest / cv_path.name)
-        else:
-            shutil.move(cv_path, dest / cv_path.name)
-
         return (
             {
-                "filename": cv_path.name,
+                "filename": doc_path.name,
                 "result": "PASS" if passed else "FAIL",
                 "score": f"{score:.3f}",
+                "must_score": f"{must_score:.3f}",
+                "nice_score": f"{nice_score:.3f}",
                 "matched_must": "; ".join(matched_must),
                 "missing_must": "; ".join(missing_must_labels),
                 "matched_nice": "; ".join(matched_nice),
                 "summary": result.get("summary", ""),
             },
-            f"{prefix} … {'PASS' if passed else 'FAIL'}  score={score:.3f}",
+            f"{prefix} … {'PASS' if passed else 'FAIL'}  score={score:.3f}  (must={must_score:.3f}  nice={nice_score:.3f})",
         )
 
     except Exception as exc:  # noqa: BLE001
         return (
             {
-                "filename": cv_path.name,
+                "filename": doc_path.name,
                 "result": "ERROR",
                 "score": "0.000",
+                "must_score": "0.000",
+                "nice_score": "0.000",
                 "matched_must": "",
                 "missing_must": "",
                 "matched_nice": "",
@@ -159,9 +154,9 @@ def _process_one(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Classify CVs (PDF/.docx) using an LLM keyword scorer."
+        description="Classify documents (PDF/.docx) using an LLM keyword scorer."
     )
-    parser.add_argument("cv_folder", help="Folder containing CV files")
+    parser.add_argument("doc_folder", help="Folder containing document files")
     parser.add_argument(
         "--config",
         default=str(_BASE_DIR / "config.yaml"),
@@ -240,14 +235,14 @@ def main() -> None:
         model = llm_cfg.get("model", "gpt-4o-mini")
 
     # ── Paths ─────────────────────────────────────────────────────────────────
-    cv_folder = Path(args.cv_folder).resolve()
-    if not cv_folder.is_dir():
-        print(f"Error: CV folder not found or not a directory: {cv_folder}", file=sys.stderr)
+    doc_folder = Path(args.doc_folder).resolve()
+    if not doc_folder.is_dir():
+        print(f"Error: Document folder not found or not a directory: {doc_folder}", file=sys.stderr)
         sys.exit(1)
     out_cfg = cfg.get("output") or {}
-    pass_dir = cv_folder / out_cfg.get("pass_folder", "classified/pass")
-    fail_dir = cv_folder / out_cfg.get("fail_folder", "classified/fail")
-    csv_path = cv_folder / out_cfg.get("csv_file", "results.csv")
+    pass_dir = doc_folder / out_cfg.get("pass_folder", "classified/pass")
+    fail_dir = doc_folder / out_cfg.get("fail_folder", "classified/fail")
+    csv_path = pass_dir.parent / out_cfg.get("csv_file", "results.csv")
     copy_mode: bool = bool(out_cfg.get("copy_files", True))
 
     try:
@@ -263,19 +258,19 @@ def main() -> None:
             shutil.rmtree(_d)
         _d.mkdir(parents=True, exist_ok=True)
 
-    # ── Collect CV files (skip output sub-folders) ─────────────────────────────
-    cv_files = [
+    # ── Collect document files (skip output sub-folders) ────────────────────────
+    doc_files = [
         f
-        for f in cv_folder.iterdir()
+        for f in doc_folder.iterdir()
         if f.is_file() and f.suffix.lower() in (".pdf", ".docx", ".doc")
     ]
 
-    if not cv_files:
-        print("No PDF or .docx files found in", cv_folder)
+    if not doc_files:
+        print("No PDF or .docx files found in", doc_folder)
         sys.exit(0)
 
     mode_label = "keyword matching (no LLM)" if args.no_llm else f"LLM ({model})"
-    print(f"Found {len(cv_files)} CV(s) — mode: {mode_label}")
+    print(f"Found {len(doc_files)} document(s) — mode: {mode_label}")
     must_display = ["/".join(g) for g in must_groups]
     nice_display = ["/".join(g) for g in nice_groups]
     print(f"Must-have keywords : {', '.join(must_display)}")
@@ -288,7 +283,7 @@ def main() -> None:
     workers_cfg = int(out_cfg.get("workers", 4))
     workers: int = args.workers if args.workers is not None else workers_cfg
 
-    cv_files_sorted = sorted(cv_files)
+    doc_files_sorted = sorted(doc_files)
     rows_map: dict[str, dict] = {}
     _print_lock = threading.Lock()
 
@@ -299,14 +294,13 @@ def main() -> None:
         future_to_path = {
             executor.submit(
                 _process_one,
-                cv_path, client, model, args.no_llm,
+                doc_path, client, model, args.no_llm,
                 must_keywords_flat, nice_keywords_flat,
                 must_groups, nice_groups,
                 must_weight, nice_weight, pass_threshold,
                 must_known, nice_known,
-                pass_dir, fail_dir, copy_mode,
-            ): cv_path
-            for cv_path in cv_files_sorted
+            ): doc_path
+            for doc_path in doc_files_sorted
         }
         for future in as_completed(future_to_path):
             row, line = future.result()
@@ -314,7 +308,27 @@ def main() -> None:
             with _print_lock:
                 print(line)
 
-    rows: list[dict] = [rows_map[p.name] for p in cv_files_sorted]
+    rows: list[dict] = [rows_map[p.name] for p in doc_files_sorted]
+
+    # ── Copy/move files with rank prefix (sorted by score, highest first) ─────
+    def _rank_key(r: dict) -> tuple:
+        return (
+            -float(r["score"]),
+            -float(r.get("must_score", 0)),
+            -float(r.get("nice_score", 0)),
+            r["filename"],
+        )
+
+    for dest_dir, result_tag in ((pass_dir, "PASS"), (fail_dir, "FAIL")):
+        group = sorted([r for r in rows if r["result"] == result_tag], key=_rank_key)
+        width = len(str(len(group))) if group else 1
+        for rank, row in enumerate(group, 1):
+            src = doc_folder / row["filename"]
+            dest_name = f"{str(rank).zfill(width)}_{row['filename']}"
+            if copy_mode:
+                shutil.copy2(src, dest_dir / dest_name)
+            else:
+                shutil.move(str(src), str(dest_dir / dest_name))
 
     # ── Write CSV ─────────────────────────────────────────────────────────────
     if rows:

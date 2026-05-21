@@ -21,7 +21,7 @@ Extract and place the binary alongside a `config.yaml` file.
 
 ```bash
 # LLM mode (default)
-GITHUB_TOKEN=ghp_... ./documents-classifier /path/to/cvs/
+GITHUB_TOKEN=ghp_... ./documents-classifier /path/to/docs/
 
 # Offline keyword-only mode — no token required
 ./documents-classifier /path/to/documents/ --no-llm

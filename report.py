@@ -9,6 +9,8 @@ def write_csv(rows: list[dict], csv_path: Path) -> None:
         "filename",
         "result",
         "score",
+        "must_score",
+        "nice_score",
         "matched_must",
         "missing_must",
         "matched_nice",
@@ -41,19 +43,20 @@ def print_leaderboard(rows: list[dict], top_n: int, bottom_n: int) -> None:
 
     def _print_table(title: str, entries: list[dict]) -> None:
         print(f"\n{title}")
-        print(f"  {'#':<4} {'Filename':<{col_w}} {'Score':>7}  {'Result':<6}  {'Must matched':<30}  Nice matched")
-        print(f"  {'-'*4} {'-'*col_w} {'-'*7}  {'-'*6}  {'-'*30}  ------------")
+        print(f"  {'#':<4} {'Filename':<{col_w}} {'Score':>7}  {'Must':>6}  {'Nice':>6}  {'Result':<6}  {'Must matched':<30}  Nice matched")
+        print(f"  {'-'*4} {'-'*col_w} {'-'*7}  {'-'*6}  {'-'*6}  {'-'*6}  {'-'*30}  ------------")
         for i, r in enumerate(entries, 1):
             must = r["matched_must"] or "—"
             nice = r["matched_nice"] or "—"
             print(
                 f"  {i:<4} {r['filename']:<{col_w}} {float(r['score']):>7.3f}"
+                f"  {float(r.get('must_score', 0)):>6.3f}  {float(r.get('nice_score', 0)):>6.3f}"
                 f"  {r['result']:<6}  {must:<30}  {nice}"
             )
 
     top_entries    = sorted_desc[:top_n]
     bottom_entries = [r for r in sorted_asc[:bottom_n] if r not in top_entries]
 
-    _print_table(f"Top {top_n} highest-scored CV(s):", top_entries)
+    _print_table(f"Top {top_n} highest-scored document(s):", top_entries)
     if bottom_entries:
-        _print_table(f"Bottom {bottom_n} lowest-scored CV(s):", bottom_entries)
+        _print_table(f"Bottom {bottom_n} lowest-scored document(s):", bottom_entries)

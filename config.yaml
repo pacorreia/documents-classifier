@@ -1,4 +1,4 @@
-# CV Classifier Configuration
+# Document Classifier Configuration
 # ============================================================
 
 # Keywords that MUST be present — scored at 70% weight
@@ -20,7 +20,7 @@ nice_keywords:
 must_weight: 0.7
 nice_weight: 0.3
 
-# A CV is "PASS" when its combined score >= this threshold (0.0–1.0)
+# A document is "PASS" when its combined score >= this threshold (0.0–1.0)
 pass_threshold: 0.6
 
 # ── LLM settings ──────────────────────────────────────────
@@ -32,10 +32,10 @@ llm:
 
 # ── Output settings ────────────────────────────────────────
 output:
-  csv_file: "results.csv"          # relative to the CV folder
-  pass_folder: "classified/pass"   # relative to the CV folder
-  fail_folder: "classified/fail"   # relative to the CV folder
+  csv_file: "results.csv"          # relative to the classified folder
+  pass_folder: "classified/pass"   # relative to the document folder
+  fail_folder: "classified/fail"   # relative to the document folder
   copy_files: true                 # true = copy; false = move the original files
-  top_n: 3                         # how many top-scored CVs to show in the summary
-  bottom_n: 3                      # how many lowest-scored CVs to show in the summary
+  top_n: 3                         # how many top-scored documents to show in the summary
+  bottom_n: 3                      # how many lowest-scored documents to show in the summary
 workers: 5                       # number of parallel workers (override with --workers N); GitHub Models caps at 5 concurrent requests

@@ -1,4 +1,4 @@
-"""CV classification: LLM-based and fast keyword-matching implementations."""
+"""Document classification: LLM-based and fast keyword-matching implementations."""
 
 import json
 import re
@@ -6,14 +6,14 @@ import re
 from openai import OpenAI
 
 SYSTEM_PROMPT = (
-    "You are a precise CV/resume analyser. "
+    "You are a precise document analyser. "
     "You identify which skills or concepts are semantically present in a candidate's CV, "
     "including synonyms, adjacent terms, and demonstrated experience — not only exact matches. "
     "Always respond with valid JSON only, no additional text."
 )
 
 USER_TEMPLATE = """\
-Analyse the CV below and determine which keywords from the two lists are present.
+Analyse the document below and determine which keywords from the two lists are present.
 
 Must-have keywords: {must_keywords}
 Nice-to-have keywords: {nice_keywords}
@@ -35,25 +35,25 @@ Return a JSON object with exactly this structure:
 Only include a keyword in matched_must / matched_nice when you are reasonably confident it is present.
 Use keyword_details to explain every keyword from both lists (found or not).
 
-CV TEXT (truncated to 8000 chars):
+DOCUMENT TEXT (truncated to 8000 chars):
 ---
-{cv_text}
+{doc_text}
 ---
 """
 
 
-def classify_cv(
+def classify_doc(
     client: OpenAI,
     model: str,
-    cv_text: str,
+    doc_text: str,
     must_keywords: list[str],
     nice_keywords: list[str],
 ) -> dict:
-    """Call the LLM to identify matched keywords in a CV."""
+    """Call the LLM to identify matched keywords in a document."""
     prompt = USER_TEMPLATE.format(
         must_keywords=json.dumps(must_keywords),
         nice_keywords=json.dumps(nice_keywords),
-        cv_text=cv_text[:8000],
+        doc_text=doc_text[:8000],
     )
     response = client.chat.completions.create(
         model=model,
@@ -70,8 +70,8 @@ def classify_cv(
     return json.loads(content)
 
 
-def classify_cv_keyword(
-    cv_text: str,
+def classify_doc_keyword(
+    doc_text: str,
     must_keywords: list[str],
     nice_keywords: list[str],
 ) -> dict:
@@ -82,7 +82,7 @@ def classify_cv_keyword(
 
     def _scan(keywords: list[str], matched: list[str]) -> None:
         for kw in keywords:
-            found = bool(re.search(r"(?<!\w)" + re.escape(kw) + r"(?!\w)", cv_text, re.IGNORECASE))
+            found = bool(re.search(r"(?<!\w)" + re.escape(kw) + r"(?!\w)", doc_text, re.IGNORECASE))
             if found:
                 matched.append(kw)
             keyword_details[kw] = {
