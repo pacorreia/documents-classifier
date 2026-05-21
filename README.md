@@ -24,20 +24,20 @@ Extract and place the binary alongside a `config.yaml` file.
 GITHUB_TOKEN=ghp_... ./documents-classifier /path/to/cvs/
 
 # Offline keyword-only mode — no token required
-./documents-classifier /path/to/cvs/ --no-llm
+./documents-classifier /path/to/documents/ --no-llm
 
 # Custom config file
-./documents-classifier /path/to/cvs/ --config /path/to/config.yaml
+./documents-classifier /path/to/documents/ --config /path/to/config.yaml
 
 # Limit parallel workers
-./documents-classifier /path/to/cvs/ --workers 2
+./documents-classifier /path/to/documents/ --workers 2
 ```
 
 **Windows**
 
 ```powershell
 $env:GITHUB_TOKEN = "ghp_..."
-.\documents-classifier.exe C:\path\to\cvs\
+.\documents-classifier.exe C:\path\to\documents\
 ```
 
 ## Configuration (`config.yaml`)
