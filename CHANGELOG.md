@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/pacorreia/documents-classifier/compare/v1.0.3...v1.0.4) (2026-05-21)
+
+
+### Bug Fixes
+
+* create new release ([cfe4b92](https://github.com/pacorreia/documents-classifier/commit/cfe4b9224351ce82b9e267efa121d7e3565c64eb))
+
 ## [1.0.3](https://github.com/pacorreia/documents-classifier/compare/v1.0.2...v1.0.3) (2026-05-21)
 
 
